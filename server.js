@@ -1,13 +1,10 @@
 const express = require("express");
 const app = express();
-const connectDB = require("./config/db");
-
 app.use(express.json({ extended: false }));
+const routes = require("./routes/index");
+
 //Define Routes
-//app.use("/api/days", require("./routes/days"));
-app.use("/api/bookings", require("./routes/bookings"));
-//app.use("/api/timeSlots", require("./routes/timeSlots"));
+app.use("/", routes);
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
