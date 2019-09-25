@@ -20,8 +20,16 @@ const getClientOBj = async () => {
       if (err) return console.log("Error loading client secret file:", err);
       // Authorize a client with credentials, then call the Google Calendar API.
       const token = await authorize(JSON.parse(content));
-      oAuth2Client.setCredentials(JSON.parse(token));
-      res(oAuth2Client);
+      if (token) {
+        if (token.toString() != "undefined") {
+          oAuth2Client.setCredentials(JSON.parse(token));
+          res(oAuth2Client);
+        } else {
+          res(null);
+        }
+      } else {
+        res(null);
+      }
     });
   }).catch(err => {
     console.log(err);
@@ -49,7 +57,18 @@ async function authorize(credentials) {
         fs.readFile(TOKEN_PATH, async (err, token) => {
           if (err) {
             const token = await getAccessToken(oAuth2Client);
-            oAuth2Client.setCredentials(JSON.parse(token));
+            if (token) {
+              if (token.toString() != "undefined") {
+                oAuth2Client.setCredentials(JSON.parse(token));
+                res(oAuth2Client);
+              } else {
+                res(null);
+              }
+            } else {
+              res(null);
+            }
+
+            //  oAuth2Client.setCredentials(JSON.parse(token));
           }
           res(token);
         });
@@ -95,9 +114,13 @@ async function getAccessToken(oAuth2Client) {
 
     const retrieveToken = async codeVal => {
       new Promise((res, reject) => {
-        Auth2Client.getToken(codeVal, (err, token) => {
-          // if (err) return console.error("Error retrieving access token", err);
-          res(token);
+        oAuth2Client.getToken(codeVal, (err, token) => {
+          if (err) return console.error("Error retrieving access token", err);
+          if (token.toString() != "undefined") {
+            res(token);
+          } else {
+            res(null);
+          }
         });
       }).catch(err => {
         console.log(err);
