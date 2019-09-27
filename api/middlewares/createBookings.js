@@ -4,12 +4,6 @@ const errorMessages = require("../../utils/errorMessages");
 
 const createBookings = eventBooking => {
   return new Promise(async (res, reject) => {
-    eventBooking.start.dateTime = new Date(
-      eventBooking.start.dateTime
-    ).toISOString();
-    eventBooking.end.dateTime = new Date(
-      eventBooking.end.dateTime
-    ).toISOString();
     const auth = await getClientObj();
     if (!auth) {
       return errorMessages.types.AUTH_FAILURE;
@@ -30,8 +24,8 @@ const createBookings = eventBooking => {
         }
         const result = {
           success: true,
-          startTime: `${new Date(booking.data.start.dateTime).toISOString()}`,
-          endTime: `${new Date(booking.data.end.dateTime).toISOString()}`
+          startTime: new Date(booking.data.start.dateTime).toISOString(),
+          endTime: new Date(booking.data.end.dateTime).toISOString()
         };
         res(result);
       }

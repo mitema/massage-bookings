@@ -11,16 +11,21 @@ const getAvailableSlots = busySlots => {
     const slotEndTime = convertToMilliseconds(slot.end);
 
     for (busySlot of busySlots) {
-      const busyStartDate = new Date(busySlot.startDate);
-      const busyEndDate = new Date(busySlot.endDate);
-      tempStartDate = new Date(busySlot.startDate);
-      tempEndDate = new Date(busySlot.endDate);
+      const busyStartDate = busySlot.startDate;
+      const busyEndDate = busySlot.endDate;
+      const busyStartDateUTC = parseUTCDate(busyStartDate);
+      const busyStartDateUTCHour = busyStartDateUTC[3];
+      const busyStartDateUTCMinute = busyStartDateUTC[3];
+
       const busyStartTime = convertToMilliseconds(
-        `${busyStartDate.getHours()}:${busyStartDate.getMinutes()}`
+        `${busyStartDateUTCHour}:${busyStartDateUTCMinute}`
       );
 
+      const busyEndDateUTC = parseUTCDate(busyEndDate);
+      const busyEndDateUTCHour = busyEndDateUTC[3];
+      const busyEndDateUTCMinute = busyEndDateUTC[3];
       const busyEndTime = convertToMilliseconds(
-        `${busyEndDate.getHours()}:${busyEndDate.getMinutes()}`
+        `${busyEndDateUTCHour}:${busyEndDateUTCMinute}`
       );
 
       if (slotStartTime <= busyEndTime && slotEndTime >= busyStartTime) {
@@ -32,16 +37,50 @@ const getAvailableSlots = busySlots => {
     }
     if (!overlap) {
       const startHourMinutes = slot.start.split(":");
-      tempStartDate.setHours(startHourMinutes[0]);
-      tempStartDate.setMinutes(startHourMinutes[1]);
+      const startUTCDateFormat = parseUTCDate(busySlot.startDate);
+      const startYear = startUTCDateFormat[0];
+      const startMonth = startUTCDateFormat[1];
+      const startDay = startUTCDateFormat[2];
+      const startHour = startHourMinutes[0];
+      const startMinute = startHourMinutes[1];
+      const startSeconds = startUTCDateFormat[5];
+      const startMilliseconds = startUTCDateFormat[6];
+
+      tempStartDate = new Date(
+        Date.UTC(
+          startYear,
+          startMonth - 1,
+          startDay,
+          startHour,
+          startMinute,
+          startSeconds,
+          startMilliseconds
+        )
+      ).toISOString();
 
       const endHourMinutes = slot.end.split(":");
-      tempEndDate.setHours(endHourMinutes[0]);
-      tempEndDate.setMinutes(endHourMinutes[1]);
-      freeSlots.push({ start: tempStartDate, end: tempEndDate });
+      const endUTCDateFormat = parseUTCDate(busySlot.endDate);
+      const endYear = endUTCDateFormat[0];
+      const endMonth = endUTCDateFormat[1];
+      const endDay = endUTCDateFormat[2];
+      const endHour = endHourMinutes[0];
+      const endMinute = endHourMinutes[1];
+      const endSeconds = endUTCDateFormat[5];
+      const endMilliseconds = endUTCDateFormat[6];
+      tempEndDate = new Date(
+        Date.UTC(
+          endYear,
+          endMonth - 1,
+          endDay,
+          endHour,
+          endMinute,
+          endSeconds,
+          endMilliseconds
+        )
+      ).toISOString();
+      freeSlots.push({ startTime: tempStartDate, endTime: tempEndDate });
     }
   });
-
   return freeSlots;
 };
 
@@ -52,15 +91,13 @@ const convertToUTCDates = (year, month, day, fixedSlots) => {
     const endHourMinutes = item.end.split(":");
 
     utcDateFormats.push({
-      start: new Date(
-        year,
-        month,
-        day,
-        startHourMinutes[0],
-        startHourMinutes[1]
-      ),
+      startTime: new Date(
+        Date.UTC(year, month - 1, day, startHourMinutes[0], startHourMinutes[1])
+      ).toISOString(),
 
-      end: new Date(year, month, day, endHourMinutes[0], endHourMinutes[1])
+      endTime: new Date(
+        Date.UTC(year, month - 1, day, endHourMinutes[0], endHourMinutes[1])
+      ).toISOString()
     });
   });
 
@@ -85,25 +122,25 @@ const isBookingInPast = date => {
 };
 
 const isWeekDay = (year, month, day) => {
-  const dayInMonth = new Date(year, month - 1, day).getDay();
+  const dayInMonth = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   return dayInMonth != 0 && dayInMonth != 6;
 };
 
 const getDaysInAMonth = (year, month) => {
-  return new Date(year, month, 0).getDate();
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
 };
 
-const isTimeWithin9and5pm = (year, month, day, hour, minute) => {
-  const lowerBound = new Date(year, month, day, 9).getTime();
-  const upperBound = new Date(year, month, day, 17).getTime();
-  const expectedBookingTime = new Date(
-    year,
-    month,
-    day,
-    hour,
-    minute
-  ).getTime();
+const isTimeWithin9and6pm = (year, month, day, hour, minute) => {
+  const lowerBound = Date.UTC(year, month, day, 9);
+  const upperBound = Date.UTC(year, month, day, 18);
+  const expectedBookingTime = Date.UTC(year, month, day, hour, minute);
+
   return expectedBookingTime >= lowerBound && expectedBookingTime <= upperBound;
+};
+
+const parseUTCDate = utcDateString => {
+  const utCDateFormatArray = utcDateString.split(/\D+/);
+  return utCDateFormatArray;
 };
 
 module.exports = {
@@ -114,5 +151,6 @@ module.exports = {
   getAvailableSlots,
   convertToUTCDates,
   isBookingInPast,
-  isTimeWithin9and5pm
+  isTimeWithin9and6pm,
+  parseUTCDate
 };

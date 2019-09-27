@@ -9,16 +9,16 @@ const getTimeSlots = async (yearParam, monthParam, dayParam) => {
   if (!auth) {
     return errorMessages.types.AUTH_FAILURE;
   }
-
   const fixedStartHour = 9; // 9am
-  const fixedEndHour = 18; // 6pm
-  const startDate = new Date(
-    yearParam,
-    monthParam - 1,
-    dayParam,
-    fixedStartHour
-  );
-  const endDate = new Date(yearParam, monthParam - 1, dayParam, fixedEndHour);
+  const fixedEndHour = 17; // 6pm
+
+  let startDate = new Date(
+    Date.UTC(yearParam, monthParam - 1, dayParam, fixedStartHour)
+  ).toISOString();
+  let endDate = new Date(
+    Date.UTC(yearParam, monthParam - 1, dayParam, fixedEndHour)
+  ).toISOString();
+
   let freeSlots = { success: "", timeSlots: [] };
   const check = {
     auth: auth,

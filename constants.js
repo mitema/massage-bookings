@@ -1,7 +1,7 @@
 module.exports = {
   fixedSlots: [
-    { start: "9:00", end: "9:40" },
-    { start: "9:45", end: "10:25" },
+    { start: "09:00", end: "09:40" },
+    { start: "09:45", end: "10:25" },
     { start: "10:30", end: "11:10" },
     { start: "11:15", end: "11:55" },
     { start: "12:00", end: "12:40" },

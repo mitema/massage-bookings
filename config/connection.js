@@ -1,6 +1,7 @@
 const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
+const util = require("util");
 //const config = require("config");
 //const credentialsFilePath = config.get("mongoURI");
 
@@ -14,26 +15,24 @@ const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 const TOKEN_PATH = "token.json";
 
 const getClientOBj = async () => {
-  return new Promise((res, reject) => {
-    // Load client secrets from a local file.
-    fs.readFile("./config/credentials.json", async (err, content) => {
-      if (err) return console.log("Error loading client secret file:", err);
-      // Authorize a client with credentials, then call the Google Calendar API.
-      const token = await authorize(JSON.parse(content));
-      if (token) {
-        if (token.toString() != "undefined") {
-          oAuth2Client.setCredentials(JSON.parse(token));
-          res(oAuth2Client);
-        } else {
-          res(null);
-        }
+  // Load client secrets from a local file.
+  const readFile = util.promisify(fs.readFile);
+  const result = await readFile("./config/credentials.json");
+  if (result) {
+    // Authorize a client with credentials, then call the Google Calendar API.
+    const authClient = await authorize(JSON.parse(result));
+    if (authClient) {
+      if (authClient.toString() != "undefined") {
+        return authClient;
       } else {
-        res(null);
+        return null;
       }
-    });
-  }).catch(err => {
-    console.log(err);
-  });
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
 };
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -42,44 +41,42 @@ const getClientOBj = async () => {
  * @param {function} callback The callback to call with the authorized client.
  */
 async function authorize(credentials) {
-  return new Promise(async (res, reject) => {
-    const { client_secret, client_id, redirect_uris } = credentials.installed;
+  const { client_secret, client_id, redirect_uris } = credentials.installed;
 
-    oAuth2Client = new google.auth.OAuth2(
-      client_id,
-      client_secret,
-      redirect_uris[0]
-    );
-
-    // Check if we have previously stored a token.
-    const readTokenFromFile = async () => {
-      return new Promise(async (res, reject) => {
-        fs.readFile(TOKEN_PATH, async (err, token) => {
-          if (err) {
-            const token = await getAccessToken(oAuth2Client);
-            if (token) {
-              if (token.toString() != "undefined") {
-                oAuth2Client.setCredentials(JSON.parse(token));
-                res(oAuth2Client);
-              } else {
-                res(null);
-              }
-            } else {
-              res(null);
-            }
-
-            //  oAuth2Client.setCredentials(JSON.parse(token));
-          }
-          res(token);
-        });
-      }).catch();
-    };
-    const token = await readTokenFromFile();
-    res(token);
-  }).catch(err => {
-    console.log(err);
-  });
+  oAuth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    redirect_uris[0]
+  );
+  const oauthClient = await readTokenFromFile(oAuth2Client);
+  return oauthClient;
 }
+// Check if we have previously stored a token.
+const readTokenFromFile = async oAuth2Client => {
+  const readFile = util.promisify(fs.readFile);
+  let token = null;
+  try {
+    token = await readFile(TOKEN_PATH);
+    if (token) {
+      if (token.toString() != "undefined") {
+        oAuth2Client.setCredentials(JSON.parse(token));
+        return oAuth2Client;
+      } else {
+        return null;
+      }
+    }
+  } catch (err) {
+    const res = await getAccessToken(oAuth2Client);
+    if (res) {
+      if (res.toString() != "undefined") {
+        oAuth2Client.setCredentials(JSON.parse(res));
+        return oAuth2Client;
+      } else {
+        return null;
+      }
+    }
+  }
+};
 
 /**
  * Get and store new token after prompting for user authorization, and then
@@ -88,54 +85,55 @@ async function authorize(credentials) {
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
 async function getAccessToken(oAuth2Client) {
-  return new Promise(async (res, reject) => {
-    const authUrl = oAuth2Client.generateAuthUrl({
-      access_type: "offline",
-      scope: SCOPES
-    });
-    console.log("Authorize this app by visiting this url:", authUrl);
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    const askQuestion = async question => {
-      return new Promise((res, rej) => {
-        rl.question(question, answer => {
-          res(answer);
-          rl.close();
-        });
-      }).catch(err => {
-        console.log(err);
-      });
-    };
-
-    const code = await askQuestion("Enter code:");
-
-    const retrieveToken = async codeVal => {
-      new Promise((res, reject) => {
-        oAuth2Client.getToken(codeVal, (err, token) => {
-          if (err) return console.error("Error retrieving access token", err);
-          if (token.toString() != "undefined") {
-            res(token);
-          } else {
-            res(null);
-          }
-        });
-      }).catch(err => {
-        console.log(err);
-      });
-    };
-    const token = await retrieveToken(code);
-    // Store the token to disk for later program executions
-    fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
-      if (err) return console.error(err);
-      console.log("Token stored to", TOKEN_PATH);
-    });
-    res(token);
-  }).catch(err => {
-    console.error(err);
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: SCOPES
   });
+
+  console.log("Authorize this app by visiting this url:", authUrl);
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  const askQuestion = async question => {
+    return new Promise((res, rej) => {
+      rl.question(question, answer => {
+        res(answer);
+        rl.close();
+      });
+    }).catch(err => {
+      console.log(err);
+    });
+  };
+
+  const code = await askQuestion("Enter code:");
+
+  const retrieveToken = async code => {
+    return new Promise((res, reject) => {
+      oAuth2Client.getToken(code, (err, token) => {
+        if (err) return console.error("Error retrieving access token", err);
+        if (token.toString() != "undefined") {
+          res(token);
+        } else {
+          res(null);
+        }
+      });
+    }).catch(err => {
+      console.log(err);
+    });
+  };
+
+  const token = await retrieveToken(code);
+  // Store the token to disk for later program executions
+  const writeToFile = util.promisify(fs.writeFile);
+  const fileResult = writeToFile(TOKEN_PATH, JSON.stringify(token));
+  if (fileResult) {
+    console.log("Token stored to", TOKEN_PATH);
+  } else {
+    console.log("error storing token");
+  }
+  return token;
 }
 
 module.exports = getClientOBj;

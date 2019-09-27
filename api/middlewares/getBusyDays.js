@@ -1,4 +1,5 @@
 const { google } = require("googleapis");
+const calendarUtils = require("../../utils/calenderUtils");
 
 const getBusyDays = async check => {
   return new Promise(async (res, reject) => {
@@ -9,11 +10,13 @@ const getBusyDays = async check => {
     calendar.freebusy.query(check, (err, result) => {
       if (err) return console.log("The API returned an error: " + err);
       busySlots = result.data.calendars.primary.busy;
+
       if (busySlots.length > 0) {
         busySlots.forEach((busySlot, index) => {
-          const startDate = new Date(busySlot.start);
-          const endDate = new Date(busySlot.end);
-          const startDay = startDate.toLocaleDateString().split("/")[1];
+          const startDate = busySlot.start;
+          const endDate = busySlot.end;
+          const startDay = calendarUtils.parseUTCDate(startDate)[2]; //get Day
+
           if (days[`${startDay}`]) {
             days[`${startDay}`].push({
               startDate: startDate,

@@ -8,32 +8,38 @@ const createBooking = async (year, month, day, hour, minute) => {
   if (!auth) {
     return errorMessages.types.AUTH_FAILURE;
   }
-  const bookingDate = new Date(year, month - 1, day, hour, minute);
+  const bookingDate = new Date(
+    Date.UTC(year, month - 1, day, hour, minute)
+  ).toISOString();
+
   const availableTimeSlots = await TimeSlotService.getTimeSlots(
     year,
     month,
     day
   );
+  if (availableTimeSlots) {
+    const bookingSlot = availableTimeSlots.timeSlots.filter(
+      availableTimeSlot => {
+        return bookingDate.toString() == availableTimeSlot.startTime.toString();
+      }
+    );
 
-  const bookingSlot = availableTimeSlots.timeSlots.filter(availableTimeSlot => {
-    return bookingDate.toTimeString() == availableTimeSlot.start.toTimeString();
-  });
-
-  if (bookingSlot.length > 0) {
-    const eventBooking = {
-      start: {
-        dateTime: `${bookingSlot[0].start}`
-      },
-      end: {
-        dateTime: `${bookingSlot[0].end}`
-      },
-      trasparency: "opaque",
-      visibility: "public"
-    };
-    const booking = await callCreateBooking(eventBooking);
-    return booking;
-  } else {
-    return errorMessages.types.INVALID_TIMESLOT;
+    if (bookingSlot.length > 0) {
+      const eventBooking = {
+        start: {
+          dateTime: `${bookingSlot[0].startTime}`
+        },
+        end: {
+          dateTime: `${bookingSlot[0].endTime}`
+        },
+        trasparency: "opaque",
+        visibility: "public"
+      };
+      const booking = await callCreateBooking(eventBooking);
+      return booking;
+    } else {
+      return errorMessages.types.INVALID_TIMESLOT;
+    }
   }
 };
 

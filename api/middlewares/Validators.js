@@ -68,11 +68,13 @@ module.exports = {
           return errorMessages.types.INVALID_MINUTES;
         }
         const date = new Date(
-          params.year,
-          params.month - 1,
-          params.day,
-          params.hour,
-          params.minute
+          Date.UTC(
+            params.year,
+            params.month - 1,
+            params.day,
+            params.hour,
+            params.minute
+          )
         );
 
         if (calendarUtils.isBookingInPast(date)) {

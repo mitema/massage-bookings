@@ -5,8 +5,9 @@ const errorMessages = require("../utils/errorMessages");
 
 module.exports = {
   getDays: async (yearParam, monthParam) => {
-    const startDate = new Date(yearParam, monthParam - 1, 1, 9);
-    const endDate = new Date(yearParam, monthParam, 0, 17);
+    const startDate = new Date(Date.UTC(yearParam, monthParam - 1, 1, 9));
+    const endDate = new Date(Date.UTC(yearParam, monthParam, 0, 18));
+
     const num_days_month = calendarUtils.getDaysInAMonth(yearParam, monthParam);
     const daysResult = { success: "", days: [] };
     const auth = await getClientObj();
