@@ -133,7 +133,7 @@ async function getAccessToken(oAuth2Client) {
   } else {
     console.log("error storing token");
   }
-  return token;
+  return JSON.stringify(token);
 }
 
 module.exports = getClientOBj;
