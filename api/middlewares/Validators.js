@@ -85,7 +85,7 @@ module.exports = {
         }
         if (
           !calendarUtils.isWeekDay(params.year, params.month, params.day) ||
-          !calendarUtils.isTimeWithin9and5pm(
+          !calendarUtils.isTimeWithin9and6pm(
             params.year,
             params.month,
             params.day,
