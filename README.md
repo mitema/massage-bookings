@@ -1,9 +1,9 @@
 # massage-bookings
-run : npm run server
-Open google api authentication link from CLI
-REtreive code and enter code in CLI
-Token.json is created, also check the file if a valid access token was received
-Access EndPoints with valid Token
+- run : npm run server. 
+- Open google api authentication link from CLI.
+- retreive code and enter code in CLI.
+- Token.json is created, also check the file if a valid access token was received.
+- Access EndPoints with valid Token
 
 ACCESS ENDPOINTS FROM BROWSER : https://massge-booking-server.appspot.com
 
